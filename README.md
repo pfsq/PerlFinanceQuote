@@ -18,8 +18,8 @@ As an example the following should work at the command line if all is installed 
 
 In order to use the modules in GnuCash it is necessary to add the proper `id` to the security's Symbol/abbreviation section:
 
-- Bloomberg: https://www.bloomberg.com/quote/**1938:HK**
-- MorningstarES: http://www.morningstar.es/es/funds/snapshot/snapshot.aspx?id=**F00000T7PZ**
+- Bloomberg: https\://www.bloomberg.com/quote/ **1938:HK**
+- MorningstarES: http\://www.morningstar.es/es/funds/snapshot/snapshot.aspx?id= **F00000T7PZ**
 
 ![GnuCash security editor](https://i.imgur.com/XZNqSjD.png)
 
