@@ -5,12 +5,14 @@ use strict;
 
 use vars qw($VERSION $BLOOMBERG_URL);
 
+use Data::Dumper;
 use LWP::UserAgent;
 use HTTP::Request::Common;
 use HTML::TreeBuilder;
+use JSON
 
-$VERSION = '0.1';
-$BLOOMBERG_URL = 'http://www.bloomberg.com/quote/';
+$VERSION = '0.2';
+$BLOOMBERG_URL = 'https://www.bloomberg.com/quote/';
 
 sub methods { return (bloomberg => \&bloomberg); }
 
@@ -23,6 +25,7 @@ sub methods { return (bloomberg => \&bloomberg); }
 sub bloomberg {
   my $quoter  = shift;
   my @symbols = @_;
+  my $decoder = new JSON;
 
   return unless @symbols;
   my ($ua, $reply, $url, %funds, $te, $table, $row, @value_currency, $name);
@@ -52,14 +55,17 @@ sub bloomberg {
     }
 
     my $tree = HTML::TreeBuilder->new_from_content($reply->content);
-    my @price_array = $tree -> look_down(_tag=>'meta','itemprop'=>'price');
-    my $price = @price_array[0]->attr('content');
-    my @curr_array = $tree -> look_down(_tag=>'meta','itemprop'=>'priceCurrency');
-    my $curr = @curr_array[0]->attr('content');
-    my @date_array = $tree -> look_down(_tag=>'meta','itemprop'=>'quoteTime');
-    my $date = @date_array[0]->attr('content');
-    #print $price;
-    #print $name;
+    my @scripts = $tree -> look_down(_tag=>'script');
+    # $scripts[7]->dump;
+    my $javascript = $scripts[7]->as_HTML();
+    my ($json) = $javascript =~ /window\.__bloomberg__\.bootstrapData\s=\s(\{.+\})\;/;
+    # print "${json}\n";
+    my $object = $decoder->decode($json);
+    my $price = $object->{quote}->{price};
+    my $curr = $object->{quote}->{issuedCurrency};
+    my $date = $object->{quote}->{lastUpdate};
+    # print $price;
+    # print $name;
 
 
     $funds{$name, 'method'}   = 'bloomberg';
@@ -71,16 +77,16 @@ sub bloomberg {
     $funds{$name, 'source'}   = 'Finance::Quote::Bloomberg';
     $funds{$name, 'name'}   = $name;
     $funds{$name, 'p_change'} = "";  # p_change is not retrieved (yet?)
-    }
+  }
 
 
-    # Check for undefined symbols
-    foreach my $symbol (@symbols) {
-	  unless ($funds{$symbol, 'success'}) {
-        $funds{$symbol, "success"}  = 0;
-        $funds{$symbol, "errormsg"} = "Fund name not found";
-	  }
+  # Check for undefined symbols
+  foreach my $symbol (@symbols) {
+    unless ($funds{$symbol, 'success'}) {
+      $funds{$symbol, "success"}  = 0;
+      $funds{$symbol, "errormsg"} = "Fund name not found";
     }
+  }
 
   return %funds if wantarray;
   return \%funds;
