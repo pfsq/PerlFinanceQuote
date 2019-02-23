@@ -31,15 +31,24 @@ sub bloomberg {
     $name = $symbol;
     $url = $BLOOMBERG_URL;
     $url = $url . $name;
-    $ua    = $quoter->user_agent;
-    $reply = $ua->request(GET $url);
-    #print $reply->content;
+    # $ua    = $quoter->user_agent;
+    $ua = LWP::UserAgent->new;
+    my @ns_headers = (
+    'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+    'referrer' => 'https://www.google.com',
+    'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+    #'Accept-Encoding' => 'gzip, deflate, br',
+    'Accept-Language' => 'en-US,en;q=0.9',
+    'Pragma' => 'no-cache', );
+    $reply = $ua->get($url, @ns_headers);
+    # below used for debugging
+    # print $reply->content;
     unless ($reply->is_success) {
-	  foreach my $symbol (@symbols) {
+      foreach my $symbol (@symbols) {
         $funds{$symbol, "success"}  = 0;
         $funds{$symbol, "errormsg"} = "HTTP failure";
-	  }
-	  return wantarray ? %funds : \%funds;
+      }
+      return wantarray ? %funds : \%funds;
     }
 
     my $tree = HTML::TreeBuilder->new_from_content($reply->content);
