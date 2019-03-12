@@ -63,6 +63,7 @@ sub bloomberg {
     # print "${json}\n";
     my $object = $decoder->decode($json);
     my $price = $object->{quote}->{price};
+    my $nav = $object->{quote}->{netAssetValue};
     my $curr = $object->{quote}->{issuedCurrency};
     my $date = $object->{quote}->{lastUpdate};
     # print $price;
@@ -71,6 +72,7 @@ sub bloomberg {
 
     $funds{$name, 'method'}   = 'bloomberg';
     $funds{$name, 'price'}    = $price;
+    $funds{$name, 'nav'}      = $nav;
     $funds{$name, 'currency'} = $curr;
     $funds{$name, 'success'}  = 1;
     $funds{$name, 'symbol'}  = $name;
