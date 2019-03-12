@@ -56,8 +56,9 @@ sub bloomberg {
 
     my $tree = HTML::TreeBuilder->new_from_content($reply->content);
     my @scripts = $tree -> look_down(_tag=>'script');
-    # $scripts[7]->dump;
-    my $javascript = $scripts[7]->as_HTML();
+    # $scripts[9]->dump;
+    my $javascript = ($scripts[9]->content_list())[0];
+    # print "${javascript}\n";
     my ($json) = $javascript =~ /window\.__bloomberg__\.bootstrapData\s=\s(\{.+\})\;/;
     # print "${json}\n";
     my $object = $decoder->decode($json);
