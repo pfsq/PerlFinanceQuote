@@ -9,9 +9,10 @@ use Data::Dumper;
 use LWP::UserAgent;
 use HTTP::Request::Common;
 use HTML::TreeBuilder;
-use JSON
+use JSON;
+use URI::Encode;
 
-$VERSION = '0.2';
+$VERSION = '0.3';
 $BLOOMBERG_URL = 'https://www.bloomberg.com/quote/';
 
 sub methods { return (bloomberg => \&bloomberg); }
@@ -26,6 +27,7 @@ sub bloomberg {
   my $quoter  = shift;
   my @symbols = @_;
   my $decoder = new JSON;
+  my $uri = URI::Encode->new( { encode_reversed => 0 } );
 
   return unless @symbols;
   my ($ua, $reply, $url, %funds, $te, $table, $row, @value_currency, $name);
@@ -59,9 +61,11 @@ sub bloomberg {
     # $scripts[9]->dump;
     my $javascript = ($scripts[9]->content_list())[0];
     # print "${javascript}\n";
-    my ($json) = $javascript =~ /window\.__bloomberg__\.bootstrapData\s=\s(\{.+\})\;/;
+    my ($json) = $javascript =~ /decodeURIComponent\(\"(.+)\"\)\)\;/;
     # print "${json}\n";
-    my $object = $decoder->decode($json);
+    my $decoded_json = $uri->decode($json);
+    # print "${json}\n";
+    my $object = $decoder->decode($decoded_json);
     my $price = $object->{quote}->{price};
     my $nav = $object->{quote}->{netAssetValue};
     my $curr = $object->{quote}->{issuedCurrency};
