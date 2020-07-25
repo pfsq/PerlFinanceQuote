@@ -5,7 +5,7 @@ use strict;
 
 use vars qw( $MORNINGSTAR_ES_FUNDS_URL);
 
-use LWP::UserAgent;
+use LWP::RobotUA;
 use HTTP::Request::Common;
 use HTML::TableExtract;
 
@@ -27,11 +27,15 @@ sub morningstares {
   return unless @symbols;
   my ($ua, $reply, $url, %funds, $te, $table, $row, @value_currency, $name);
 
+  #$ua = LWP::RobotUA->new('gnc/0.2', 'gnc@zippymail.info');
+  #$ua->agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36");
+
   foreach my $symbol (@symbols) {
     $name = $symbol;
     $url = $MORNINGSTAR_ES_FUNDS_URL;
     $url = $url . $name;
     $ua    = $quoter->user_agent;
+    #$ua->delay((int(rand(6)) + 2)/60);
     $reply = $ua->request(GET $url);
     unless ($reply->is_success) {
 	  foreach my $symbol (@symbols) {
@@ -48,7 +52,24 @@ sub morningstares {
         for my $row ($table->rows()) {
             if (defined(@$row[0])) {
                 if ('VL' eq substr(@$row[0],0,2)) {
+                    # print "@${row[0]}\n";
                     my $date = substr(@$row[0],-10);
+                    @value_currency = split(' ', $$row[2]);
+                    $funds{$name, 'method'}   = 'morningstar_funds';
+                    $value_currency[1] =~ s/,/\./;
+                    $funds{$name, 'nav'}    = $value_currency[1];
+                    $funds{$name, 'currency'} = $value_currency[0];
+                    $funds{$name, 'success'}  = 1;
+                    $funds{$name, 'symbol'}  = $name;
+                    $quoter->store_date(\%funds, $name, {eurodate => $date});
+                    $funds{$name, 'source'}   = 'Finance::Quote::MorningstarES';
+                    $funds{$name, 'name'}   = $name;
+                    $funds{$name, 'p_change'} = "";  # p_change is not retrieved (yet?)
+                } elsif ('Bid' eq substr(@$row[0],0,3)) {
+                    # print "@${row[0]}\n";
+                    # my $date = substr(@$row[0],-30,10);
+                    (my $date) = @$row[0] =~ m/(\d+\/\d+\/\d+)/g;
+                    # print "${date}\n";
                     @value_currency = split(' ', $$row[2]);
                     $funds{$name, 'method'}   = 'morningstar_funds';
                     $value_currency[1] =~ s/,/\./;
